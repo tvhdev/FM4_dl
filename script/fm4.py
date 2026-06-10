@@ -71,7 +71,7 @@ try:
 except ImportError:
     print("Unable to run this script. urlopen not available.")
 
-def search_in_json(stream): # changed function to look for multiple show streams
+def search_in_json(stream, all_shows=False): # changed function to look for multiple show streams
     """ from audioapi.orf.at. Have a look into https://fm4.orf.at/radio/stories/fm4houseofpain """
     # no exception handling because I want to know if it does not work
     #now_s = datetime.now().strftime('%s')+'000' does not work on windows
@@ -80,19 +80,20 @@ def search_in_json(stream): # changed function to look for multiple show streams
     json_s = f.read()
     f.close()
     res = simplejson.loads(json_s)
-    # JSON structure changed (e.g. https://audioapi.orf.at/fm4/json/2.0/playlist/4LB). The "last" broadcast 
-    # day of the show contains always the current stream 
-    parts = res[len(res)-1]['streams'] #check num of streams in the json
-    if len(parts) == 1: #regular download of single stream
-        loop_stream_id = res[len(res)-1]['streams'][0]['loopStreamId']
-        return 'https://loopstream01.apa.at/?channel=fm4&ua=flash&id=%s' % loop_stream_id
+    # JSON structure changed (e.g. https://audioapi.orf.at/fm4/json/2.0/playlist/4LB). The list contains
+    # one entry per broadcast day, going back up to 4 weeks. The "last" entry is always the most recent one.
+    broadcasts = res if all_shows else [res[len(res)-1]]
 
-    else:
-        urls = list() #if there are more then one parts the respective urls are returned in a list
-        for stream in parts:
-            loop_stream_id = stream['loopStreamId']
-            urls.append('https://loopstream01.apa.at/?channel=fm4&ua=flash&id=%s' % loop_stream_id)
-        return urls
+    # entries: list of (date, part_index, total_parts, url) tuples, one per stream/part
+    entries = list()
+    for broadcast in broadcasts:
+        parts = broadcast['streams'] #check num of streams in the json
+        for idx, part in enumerate(parts, start=1):
+            loop_stream_id = part['loopStreamId']
+            date = loop_stream_id.split('_')[0]
+            url = 'https://loopstream01.apa.at/?channel=fm4&ua=flash&id=%s' % loop_stream_id
+            entries.append((date, idx, len(parts), url))
+    return entries
 
 def show_list():
     """ just guessed """
@@ -103,11 +104,19 @@ def show_list():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get fm4 stream url')
     parser.add_argument('--stream', '-s', default='4HOP', help='name of stream, e.g. 4HOP (House Of Pain) 4UL (Unlimited of the last Friday)')
-    parser.add_argument('--list', '-l', action='store_true')
+    parser.add_argument('--list', '-l', action='store_true', help='list all available show tags and exit')
+    parser.add_argument('--all', '-a', action='store_true', help='list all available broadcasts (up to 4 weeks back) instead of just the latest one')
     args = parser.parse_args()
     if args.list:
         show_list()
         sys.exit(0)
-    res = search_in_json(args.stream)
-    if res:
-        print(res)
+    entries = search_in_json(args.stream, args.all)
+    if args.all:
+        # one line per stream/part: "<date> <part_index> <total_parts> <url>"
+        for date, idx, total, url in entries:
+            print('%s %d %d %s' % (date, idx, total, url))
+    elif entries:
+        if len(entries) == 1:
+            print(entries[0][3])
+        else:
+            print([e[3] for e in entries])

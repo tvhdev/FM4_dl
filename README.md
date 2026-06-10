@@ -36,6 +36,18 @@ python fm4.py -s "4HOP"
 >>> ['http://loopstream01.apa.at/?channel=fm4&ua=flash&id=2018-08-29_2100_tl_54_4HOPWed1_63490.mp3', 'http://loopstream01.apa.at/?channel=fm4&ua=flash&id=2018-08-29_2200_tl_54_4HOPWed2_63492.mp3']
 
 ```
+
+The FM4 API keeps the last 4 weeks of broadcasts for each show. Pass `--all`/`-a` to list every available broadcast instead of just the latest one. Each line contains the broadcast date, the part index, the total number of parts and the URL:
+
+```bash
+python fm4.py -s "4HOP" --all
+
+>>> 2026-05-13 1 1 https://loopstream01.apa.at/?channel=fm4&ua=flash&id=2026-05-13_2159_tl_54_4HOPWed1_178844.mp3
+>>> 2026-05-20 1 1 https://loopstream01.apa.at/?channel=fm4&ua=flash&id=2026-05-20_2200_tl_54_4HOPWed1_179080.mp3
+>>> 2026-05-27 1 1 https://loopstream01.apa.at/?channel=fm4&ua=flash&id=2026-05-27_2200_tl_54_4HOPWed1_179323.mp3
+>>> 2026-06-03 1 1 https://loopstream01.apa.at/?channel=fm4&ua=flash&id=2026-06-03_2200_tl_54_4HOPWed1_179570.mp3
+```
+
 #### Install rclone (optional)
 
 If you want to upload your files to a cloud service, use rclone. It supports Dropbox, Google Drive, Hetzner Storage Box, SFTP, SMB / CIFS or the local filesystem (and much many more, see https://rclone.org/) 
@@ -50,6 +62,8 @@ sudo nano fm4_dl.sh
 ```
 
 Insert your favorite show tags (variable SHOW_TAGS) and storage location (STORAGE) in the script. You can find out your shows tag by looking at the [FM4 API](http://audioapi.orf.at/fm4/json/2.0/broadcasts/) or in the list in the fm4.py file
+
+For each show, the script checks all broadcasts available via the API (up to 4 weeks back) and downloads any that aren't already in the storage directory yet, so it automatically catches up on missed weeks. Interrupted downloads are resumed on the next run instead of being skipped or restarted from scratch.
 
 Then just run it!
 
