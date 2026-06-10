@@ -2,6 +2,7 @@
 cd "$(dirname "$0")" #set wd to file location
 SHOW_TAGS=(4D1 4TV 4GP 4UL 4DKM 4DD 4LB 4SS 4DLL)  #insert you favourite show tags here
 STORAGE=/mnt/storage/Musik/FM4/downloads
+PYTHON_BIN=$(command -v python3 || command -v python) #some systems don't have a "python" binary anymore
 for SHOW_TAG in "${SHOW_TAGS[@]}"; do
   mkdir -p ${STORAGE}/${SHOW_TAG} #creates show directory if it doesn't exist
   #call python script to get date/url of every available broadcast (up to 4 weeks back)
@@ -27,5 +28,5 @@ for SHOW_TAG in "${SHOW_TAGS[@]}"; do
     else
       logger "skipping file ${FILENAME}, it does already exist"
     fi
-  done < <(python fm4.py -s ${SHOW_TAG} --all)
+  done < <(${PYTHON_BIN} fm4.py -s ${SHOW_TAG} --all)
 done
