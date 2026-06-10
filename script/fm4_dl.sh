@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 cd "$(dirname "$0")" #set wd to file location
 SHOW_TAGS=(4D1 4TV 4GP 4UL 4DKM 4DD 4LB 4SS 4DLL)  #insert you favourite show tags here
-STORAGE=/mnt/storage/Musik/FM4/downloads
+STORAGE="${STORAGE:-/mnt/storage/Musik/FM4/downloads}" #override via STORAGE env var, e.g. in docker-compose.yml
 PYTHON_BIN=$(command -v python3 || command -v python) #some systems don't have a "python" binary anymore
 for SHOW_TAG in "${SHOW_TAGS[@]}"; do
   mkdir -p ${STORAGE}/${SHOW_TAG} #creates show directory if it doesn't exist
