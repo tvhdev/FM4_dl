@@ -66,8 +66,9 @@ streams = [
 try:
     if sys.hexversion >= 50331648:
         from urllib.request import urlopen
+        from urllib.error import HTTPError
     else:
-        from urllib2 import urlopen
+        from urllib2 import urlopen, HTTPError
 except ImportError:
     print("Unable to run this script. urlopen not available.")
 
@@ -76,7 +77,13 @@ def search_in_json(stream, all_shows=False): # changed function to look for mult
     # no exception handling because I want to know if it does not work
     #now_s = datetime.now().strftime('%s')+'000' does not work on windows
     now_s = str(int(time.time()))+'000'
-    f = urlopen('https://audioapi.orf.at/fm4/json/2.0/playlist/%s?callback=&_=%s' % (stream, now_s))
+    try:
+        f = urlopen('https://audioapi.orf.at/fm4/json/2.0/playlist/%s?callback=&_=%s' % (stream, now_s))
+    except HTTPError as e:
+        if e.code == 404:
+            sys.stderr.write('No playlist found for stream "%s" (404 Not Found), check the tag with --list\n' % stream)
+            return []
+        raise
     json_s = f.read()
     f.close()
     res = simplejson.loads(json_s)
